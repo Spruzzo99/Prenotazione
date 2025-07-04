@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prenota il Tuo Tavolo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-serif-display {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Stile per nascondere le frecce dell'input numerico */
+        input[type='number']::-webkit-inner-spin-button,
+        input[type='number']::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type='number'] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-stone-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden">
+        <!-- Sezione Header con Immagine -->
+        <div class="h-40 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974&auto=format&fit=crop');">
+            <div class="h-full w-full bg-black bg-opacity-40 flex items-center justify-center">
+                 <h1 class="text-3xl font-serif-display text-white text-center">Prenota il Tuo Tavolo</h1>
+            </div>
+        </div>
+
+        <!-- Contenitore del Form -->
+        <div class="p-8">
+            
+            <!-- Messaggio di Conferma (nascosto di default) -->
+            <div id="confirmationMessage" class="hidden mb-6 p-4 bg-green-100 border border-green-300 text-green-800 rounded-lg text-center">
+                <h3 class="font-bold text-lg">Grazie per la tua prenotazione!</h3>
+                <p>Abbiamo inviato una conferma al tuo indirizzo email. A presto!</p>
+            </div>
+
+            <!-- Form di Prenotazione -->
+            <form id="bookingForm" class="space-y-6">
+                
+                <!-- Sezione Data e Ora -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="date" class="block text-sm font-medium text-slate-700 mb-1">Data</label>
+                        <input type="date" id="date" name="date" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition">
+                    </div>
+                    <div>
+                        <label for="time" class="block text-sm font-medium text-slate-700 mb-1">Orario</label>
+                        <select id="time" name="time" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition bg-white">
+                            <!-- Gli orari saranno generati da JavaScript -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Sezione Numero Persone -->
+                <div>
+                    <label for="people" class="block text-sm font-medium text-slate-700 mb-1">Numero di Persone</label>
+                    <input type="number" id="people" name="people" min="1" max="12" placeholder="2" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition">
+                </div>
+
+                <!-- Sezione Dati Cliente -->
+                <div class="border-t border-stone-200 pt-6 space-y-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
+                        <input type="text" id="name" name="name" placeholder="Mario Rossi" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition">
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                        <input type="email" id="email" name="email" placeholder="mario.rossi@email.com" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition">
+                    </div>
+                     <div>
+                        <label for="phone" class="block text-sm font-medium text-slate-700 mb-1">Telefono (Opzionale)</label>
+                        <input type="tel" id="phone" name="phone" placeholder="3331234567" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition">
+                    </div>
+                </div>
+
+                <!-- Pulsante di Invio -->
+                <div>
+                    <button type="submit" class="w-full bg-amber-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-transform duration-150 ease-in-out active:scale-95">
+                        Conferma Prenotazione
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('date');
+            const timeSelect = document.getElementById('time');
+            const bookingForm = document.getElementById('bookingForm');
+            const confirmationMessage = document.getElementById('confirmationMessage');
+
+            // --- Impostazioni Iniziali ---
+
+            // Imposta la data minima a oggi
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.setAttribute('min', today);
+
+            // Funzione per generare le fasce orarie
+            function generateTimeSlots() {
+                timeSelect.innerHTML = ''; // Pulisce le opzioni esistenti
+                const slots = [];
+                // Orari pranzo
+                for (let h = 12; h <= 14; h++) {
+                    for (let m = 0; m < 60; m += 30) {
+                        const hour = h.toString().padStart(2, '0');
+                        const minute = m.toString().padStart(2, '0');
+                        slots.push(`${hour}:${minute}`);
+                    }
+                }
+                // Orari cena
+                for (let h = 19; h <= 22; h++) {
+                    for (let m = 0; m < 60; m += 30) {
+                        const hour = h.toString().padStart(2, '0');
+                        const minute = m.toString().padStart(2, '0');
+                        slots.push(`${hour}:${minute}`);
+                    }
+                }
+                
+                slots.forEach(slot => {
+                    const option = document.createElement('option');
+                    option.value = slot;
+                    option.textContent = slot;
+                    timeSelect.appendChild(option);
+                });
+            }
+            
+            generateTimeSlots();
+
+            // --- Gestione Eventi ---
+
+            // Gestisce l'invio del form
+            bookingForm.addEventListener('submit', function(event) {
+                event.preventDefault(); // Previene l'invio reale del form
+
+                // Validazione semplice (HTML5 required fa già molto)
+                if (bookingForm.checkValidity()) {
+                    // Qui, in un'applicazione reale, invieresti i dati a un server (backend)
+                    // Per ora, simuliamo il successo
+                    console.log('Dati del form pronti per essere inviati:');
+                    const formData = new FormData(bookingForm);
+                    for (let [key, value] of formData.entries()) {
+                        console.log(`${key}: ${value}`);
+                    }
+                    
+                    // Mostra il messaggio di conferma e nasconde il form
+                    bookingForm.classList.add('hidden');
+                    confirmationMessage.classList.remove('hidden');
+                    
+                    // Opzionale: scrolla la pagina in cima per vedere il messaggio
+                    window.scrollTo(0, 0);
+                } else {
+                    // In caso di validazione fallita (anche se i browser moderni la gestiscono bene)
+                    console.error('Il form non è valido.');
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
