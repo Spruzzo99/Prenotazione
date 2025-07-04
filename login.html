@@ -42,9 +42,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIGURAZIONE FIREBASE ---
-        // Usa la stessa configurazione che hai negli altri file
         const firebaseConfig = {
             apiKey: "AIzaSyBqjGiIOLmBKdgWdfIUryQIZuht3iClTpc",
             authDomain: "saas-ristoranti.firebaseapp.com",
@@ -57,6 +57,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
         // --- Logica della Pagina ---
         const form = document.getElementById('auth-form');
@@ -91,20 +92,22 @@
             errorMessage.classList.add('hidden');
 
             if (isLoginMode) {
-                // Modalità Accesso
                 signInWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        window.location.href = './pannello/'; // Reindirizza al pannello
-                    })
-                    .catch((error) => {
+                    .then(() => { window.location.href = './pannello/'; })
+                    .catch(() => {
                         errorMessage.textContent = 'Email o password non corrette.';
                         errorMessage.classList.remove('hidden');
                     });
             } else {
-                // Modalità Registrazione
                 createUserWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        // Dopo la registrazione, reindirizza al pannello
+                    .then(async (userCredential) => {
+                        const user = userCredential.user;
+                        // Crea un documento per l'utente in Firestore
+                        await setDoc(doc(db, "users", user.uid), {
+                            email: user.email,
+                            subscriptionStatus: "inactive", // Stato iniziale dell'abbonamento
+                            createdAt: new Date()
+                        });
                         window.location.href = './pannello/';
                     })
                     .catch((error) => {
