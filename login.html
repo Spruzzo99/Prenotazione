@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accesso Ristoratore</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-sm">
+        <div class="bg-white p-8 rounded-2xl shadow-lg">
+            <h2 id="form-title" class="text-2xl font-bold text-center text-slate-800 mb-6">Accedi al tuo Pannello</h2>
+            
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
+                    <input type="email" id="email" required class="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
+                    <input type="password" id="password" required class="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                </div>
+                
+                <div id="error-message" class="hidden p-3 bg-red-100 text-red-700 rounded-md text-sm"></div>
+
+                <div>
+                    <button type="submit" id="submit-button" class="w-full bg-amber-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-amber-600 transition">Accedi</button>
+                </div>
+            </form>
+
+            <div class="text-center mt-6">
+                <a href="#" id="toggle-link" class="text-sm text-amber-600 hover:underline">Non hai un account? Registrati</a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // --- CONFIGURAZIONE FIREBASE ---
+        // Usa la stessa configurazione che hai negli altri file
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqjGiIOLmBKdgWdfIUryQIZuht3iClTpc",
+            authDomain: "saas-ristoranti.firebaseapp.com",
+            projectId: "saas-ristoranti",
+            storageBucket: "saas-ristoranti.firebasestorage.app",
+            messagingSenderId: "967466784588",
+            appId: "1:967466784588:web:d5b00440aaba806e06e1e9",
+            measurementId: "G-0LZ8TRWNR0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // --- Logica della Pagina ---
+        const form = document.getElementById('auth-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const toggleLink = document.getElementById('toggle-link');
+        const formTitle = document.getElementById('form-title');
+        const submitButton = document.getElementById('submit-button');
+        const errorMessage = document.getElementById('error-message');
+
+        let isLoginMode = true;
+
+        toggleLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            errorMessage.classList.add('hidden');
+            if (isLoginMode) {
+                formTitle.textContent = 'Accedi al tuo Pannello';
+                submitButton.textContent = 'Accedi';
+                toggleLink.textContent = 'Non hai un account? Registrati';
+            } else {
+                formTitle.textContent = 'Crea un Nuovo Account';
+                submitButton.textContent = 'Registrati';
+                toggleLink.textContent = 'Hai già un account? Accedi';
+            }
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            errorMessage.classList.add('hidden');
+
+            if (isLoginMode) {
+                // Modalità Accesso
+                signInWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        window.location.href = './pannello/'; // Reindirizza al pannello
+                    })
+                    .catch((error) => {
+                        errorMessage.textContent = 'Email o password non corrette.';
+                        errorMessage.classList.remove('hidden');
+                    });
+            } else {
+                // Modalità Registrazione
+                createUserWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        // Dopo la registrazione, reindirizza al pannello
+                        window.location.href = './pannello/';
+                    })
+                    .catch((error) => {
+                        if (error.code === 'auth/email-already-in-use') {
+                            errorMessage.textContent = 'Questo indirizzo email è già registrato.';
+                        } else if (error.code === 'auth/weak-password') {
+                            errorMessage.textContent = 'La password deve essere di almeno 6 caratteri.';
+                        } else {
+                            errorMessage.textContent = 'Si è verificato un errore durante la registrazione.';
+                        }
+                        errorMessage.classList.remove('hidden');
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
