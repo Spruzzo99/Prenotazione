@@ -9,46 +9,33 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .font-serif-display {
-            font-family: 'Playfair Display', serif;
-        }
-        /* Stile per nascondere le frecce dell'input numerico */
+        body { font-family: 'Inter', sans-serif; }
+        .font-serif-display { font-family: 'Playfair Display', serif; }
         input[type='number']::-webkit-inner-spin-button,
-        input[type='number']::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type='number'] {
-            -moz-appearance: textfield;
-        }
+        input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type='number'] { -moz-appearance: textfield; }
     </style>
 </head>
 <body class="bg-stone-100 flex items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden">
-        <!-- Sezione Header con Immagine -->
         <div class="h-40 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974&auto=format&fit=crop');">
             <div class="h-full w-full bg-black bg-opacity-40 flex items-center justify-center">
                  <h1 class="text-3xl font-serif-display text-white text-center">Prenota il Tuo Tavolo</h1>
             </div>
         </div>
 
-        <!-- Contenitore del Form -->
         <div class="p-8">
-            
-            <!-- Messaggio di Conferma (nascosto di default) -->
             <div id="confirmationMessage" class="hidden mb-6 p-4 bg-green-100 border border-green-300 text-green-800 rounded-lg text-center">
                 <h3 class="font-bold text-lg">Grazie per la tua prenotazione!</h3>
-                <p>Abbiamo inviato una conferma al tuo indirizzo email. A presto!</p>
+                <p>Abbiamo ricevuto la tua richiesta. A presto!</p>
+            </div>
+            <div id="errorMessage" class="hidden mb-6 p-4 bg-red-100 border border-red-300 text-red-800 rounded-lg">
+                <h3 class="font-bold">Oops! Qualcosa è andato storto.</h3>
+                <p id="errorText"></p>
             </div>
 
-            <!-- Form di Prenotazione -->
             <form id="bookingForm" class="space-y-6">
-                
-                <!-- Sezione Data e Ora -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label for="date" class="block text-sm font-medium text-slate-700 mb-1">Data</label>
@@ -56,19 +43,13 @@
                     </div>
                     <div>
                         <label for="time" class="block text-sm font-medium text-slate-700 mb-1">Orario</label>
-                        <select id="time" name="time" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition bg-white">
-                            <!-- Gli orari saranno generati da JavaScript -->
-                        </select>
+                        <select id="time" name="time" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition bg-white"></select>
                     </div>
                 </div>
-
-                <!-- Sezione Numero Persone -->
                 <div>
                     <label for="people" class="block text-sm font-medium text-slate-700 mb-1">Numero di Persone</label>
                     <input type="number" id="people" name="people" min="1" max="12" placeholder="2" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition">
                 </div>
-
-                <!-- Sezione Dati Cliente -->
                 <div class="border-t border-stone-200 pt-6 space-y-4">
                     <div>
                         <label for="name" class="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
@@ -83,10 +64,8 @@
                         <input type="tel" id="phone" name="phone" placeholder="3331234567" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition">
                     </div>
                 </div>
-
-                <!-- Pulsante di Invio -->
                 <div>
-                    <button type="submit" class="w-full bg-amber-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-transform duration-150 ease-in-out active:scale-95">
+                    <button type="submit" class="w-full bg-amber-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-transform duration-150 ease-in-out active:scale-95 disabled:bg-amber-300">
                         Conferma Prenotazione
                     </button>
                 </div>
@@ -94,79 +73,90 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const dateInput = document.getElementById('date');
-            const timeSelect = document.getElementById('time');
-            const bookingForm = document.getElementById('bookingForm');
-            const confirmationMessage = document.getElementById('confirmationMessage');
+    <!-- Importa le librerie di Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-            // --- Impostazioni Iniziali ---
+        // --- CONFIGURAZIONE FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqjGiIOLmBKdgWdfIUryQIZuht3iClTpc",
+            authDomain: "saas-ristoranti.firebaseapp.com",
+            projectId: "saas-ristoranti",
+            storageBucket: "saas-ristoranti.firebasestorage.app",
+            messagingSenderId: "967466784588",
+            appId: "1:967466784588:web:d5b00440aaba806e06e1e9",
+            measurementId: "G-0LZ8TRWNR0"
+        };
 
-            // Imposta la data minima a oggi
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.setAttribute('min', today);
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
 
-            // Funzione per generare le fasce orarie
-            function generateTimeSlots() {
-                timeSelect.innerHTML = ''; // Pulisce le opzioni esistenti
-                const slots = [];
-                // Orari pranzo
-                for (let h = 12; h <= 14; h++) {
-                    for (let m = 0; m < 60; m += 30) {
-                        const hour = h.toString().padStart(2, '0');
-                        const minute = m.toString().padStart(2, '0');
-                        slots.push(`${hour}:${minute}`);
-                    }
-                }
-                // Orari cena
-                for (let h = 19; h <= 22; h++) {
-                    for (let m = 0; m < 60; m += 30) {
-                        const hour = h.toString().padStart(2, '0');
-                        const minute = m.toString().padStart(2, '0');
-                        slots.push(`${hour}:${minute}`);
-                    }
-                }
-                
-                slots.forEach(slot => {
-                    const option = document.createElement('option');
-                    option.value = slot;
-                    option.textContent = slot;
-                    timeSelect.appendChild(option);
-                });
-            }
-            
-            generateTimeSlots();
+        // --- Logica della Pagina ---
+        const dateInput = document.getElementById('date');
+        const timeSelect = document.getElementById('time');
+        const bookingForm = document.getElementById('bookingForm');
+        const confirmationMessage = document.getElementById('confirmationMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const submitButton = bookingForm.querySelector('button[type="submit"]');
 
-            // --- Gestione Eventi ---
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('min', today);
 
-            // Gestisce l'invio del form
-            bookingForm.addEventListener('submit', function(event) {
-                event.preventDefault(); // Previene l'invio reale del form
+        function generateTimeSlots() {
+            timeSelect.innerHTML = '';
+            const slots = [];
+            for (let h = 12; h <= 14; h++) { for (let m = 0; m < 60; m += 30) { slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`); } }
+            for (let h = 19; h <= 22; h++) { for (let m = 0; m < 60; m += 30) { slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`); } }
+            slots.forEach(slot => {
+                const option = document.createElement('option');
+                option.value = slot;
+                option.textContent = slot;
+                timeSelect.appendChild(option);
+            });
+        }
+        generateTimeSlots();
 
-                // Validazione semplice (HTML5 required fa già molto)
-                if (bookingForm.checkValidity()) {
-                    // Qui, in un'applicazione reale, invieresti i dati a un server (backend)
-                    // Per ora, simuliamo il successo
-                    console.log('Dati del form pronti per essere inviati:');
-                    const formData = new FormData(bookingForm);
-                    for (let [key, value] of formData.entries()) {
-                        console.log(`${key}: ${value}`);
-                    }
-                    
-                    // Mostra il messaggio di conferma e nasconde il form
+        bookingForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            confirmationMessage.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+
+            if (bookingForm.checkValidity()) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = `<span class="flex items-center justify-center"><svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Invio in corso...</span>`;
+
+                const formData = new FormData(bookingForm);
+                const bookingData = {
+                    name: formData.get('name'), email: formData.get('email'), phone: formData.get('phone'),
+                    date: formData.get('date'), time: formData.get('time'), people: parseInt(formData.get('people')),
+                    status: 'pending', createdAt: new Date()
+                };
+
+                try {
+                    const docRef = await addDoc(collection(db, "bookings"), bookingData);
                     bookingForm.classList.add('hidden');
                     confirmationMessage.classList.remove('hidden');
-                    
-                    // Opzionale: scrolla la pagina in cima per vedere il messaggio
-                    window.scrollTo(0, 0);
-                } else {
-                    // In caso di validazione fallita (anche se i browser moderni la gestiscono bene)
-                    console.error('Il form non è valido.');
+                } catch (e) {
+                    console.error("Errore Firebase:", e);
+                    if (e.code === 'permission-denied') {
+                        errorText.textContent = "Errore di permessi. Controlla le regole del database Firestore e assicurati che sia in modalità test.";
+                    } else if (e.message.includes("Failed to fetch") || e.message.includes("unavailable")) {
+                        errorText.textContent = "Errore di connessione. La tua configurazione 'firebaseConfig' sembra corretta, ma potrebbe esserci un problema con la rete o con i servizi Firebase.";
+                    } else {
+                        errorText.textContent = "Non è stato possibile salvare la prenotazione. Controlla che il tuo progetto Firebase sia configurato correttamente.";
+                    }
+                    errorMessage.classList.remove('hidden');
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Conferma Prenotazione';
                 }
-            });
+            }
         });
     </script>
-
 </body>
 </html>
