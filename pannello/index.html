@@ -129,7 +129,7 @@
             if (!bookingId || !action) return;
 
             const bookingRef = doc(db, "bookings", bookingId);
-            let newStatus = '';
+            let newStatus = ''
 
             if (action === 'confirm') newStatus = 'confirmed';
             else if (action === 'cancel') newStatus = 'cancelled';
