@@ -78,7 +78,7 @@
 
         // --- CONFIGURAZIONE STRIPE ---
         // IMPORTANTE: Sostituisci con la tua chiave PUBBLICABILE di Stripe
-        const stripe = Stripe('pk_live_51RhBN8Fl2fqQASUsYDNcOLGSRvyztC8VEL9nqgoXvDqdrcgt5YXkjjETcHFlD4qE2SeIJR6PzTZYmwQ6FaHoK51h00hExo2X4v'); // Chiave di esempio
+      const stripe = Stripe('pk_live_51RhBN8Fl2fqQASUsYDNcOLGSRvyztC8VEL9nqgoXvDqdrcgt5YXkjjETcHFlD4qE2SeIJR6PzTZYmwQ6FaHoK51h00hExo2X4v'); // Chiave di esempio
         
         const elements = stripe.elements();
         const cardElement = elements.create('card');
@@ -97,7 +97,8 @@
                 currentUser = user;
             } else {
                 // Se l'utente non è loggato, non dovrebbe essere qui. Lo rimandiamo al login.
-                window.location.href = './login.html';
+                const loginPath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/login.html';
+                window.location.href = loginPath;
             }
         });
 
@@ -126,7 +127,7 @@
             
             setTimeout(async () => {
                 try {
-                    // Aggiorna lo stato dell'abbonamento su Firestore
+                    // Aggiorna lo stato dell'abbonamento su Firestore per l'utente corrente
                     const userDocRef = doc(db, "users", currentUser.uid);
                     await updateDoc(userDocRef, {
                         subscriptionStatus: "active"
