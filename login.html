@@ -85,43 +85,92 @@
             }
         });
 
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = emailInput.value;
             const password = passwordInput.value;
             errorMessage.classList.add('hidden');
 
             if (isLoginMode) {
-                signInWithEmailAndPassword(auth, email, password)
-                    .then(() => { window.location.href = './pannello/'; })
-                    .catch(() => {
-                        errorMessage.textContent = 'Email o password non corrette.';
-                        errorMessage.classList.remove('hidden');
-                    });
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    window.location.href = './pannello/';
+                } catch (error) {
+                    errorMessage.textContent = 'Email o password non corrette.';
+                    errorMessage.classList.remove('hidden');
+                }
             } else {
-                createUserWithEmailAndPassword(auth, email, password)
-                    .then(async (userCredential) => {
-                        const user = userCredential.user;
-                        // Crea un documento per l'utente in Firestore
-                        await setDoc(doc(db, "users", user.uid), {
-                            email: user.email,
-                            subscriptionStatus: "inactive", // Stato iniziale dell'abbonamento
-                            createdAt: new Date()
-                        });
-                        window.location.href = './pannello/';
-                    })
-                    .catch((error) => {
-                        if (error.code === 'auth/email-already-in-use') {
-                            errorMessage.textContent = 'Questo indirizzo email è già registrato.';
-                        } else if (error.code === 'auth/weak-password') {
-                            errorMessage.textContent = 'La password deve essere di almeno 6 caratteri.';
-                        } else {
-                            errorMessage.textContent = 'Si è verificato un errore durante la registrazione.';
-                        }
-                        errorMessage.classList.remove('hidden');
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    
+                    // Crea un documento per l'utente in Firestore
+                    await setDoc(doc(db, "users", user.uid), {
+                        email: user.email,
+                        subscriptionStatus: "inactive", // Stato iniziale dell'abbonamento
+                        createdAt: new Date()
                     });
+
+                    window.location.href = './pannello/';
+                } catch (error) {
+                    if (error.code === 'auth/email-already-in-use') {
+                        errorMessage.textContent = 'Questo indirizzo email è già registrato.';
+                    } else if (error.code === 'auth/weak-password') {
+                        errorMessage.textContent = 'La password deve essere di almeno 6 caratteri.';
+                    } else if (error.code === 'permission-denied') {
+                        errorMessage.textContent = 'Errore di permessi. Controlla le regole di sicurezza di Firestore.';
+                    }
+                    else {
+                        errorMessage.textContent = 'Si è verificato un errore durante la registrazione. Controlla le regole di Firestore.';
+                        console.error("Errore di registrazione:", error);
+                    }
+                    errorMessage.classList.remove('hidden');
+                }
             }
         });
     </script>
 </body>
 </html>
+```
+
+### Cosa Fare Adesso (Passaggi Fondamentali)
+
+1.  **Aggiorna il Codice:** Sostituisci il tuo file `login.html` su GitHub con questo nuovo codice.
+
+2.  **Correggi le Regole di Firestore (La Soluzione Definitiva):**
+    * Vai alla **Console di Firebase** -> **Firestore Database** -> scheda **"Regole"**.
+    * Sostituisci le regole attuali con queste. Sono più sicure e risolveranno il problema:
+
+    ```javascript
+    rules_version = '2';
+    service cloud.firestore {
+      match /databases/{database}/documents {
+        // Chiunque può creare una prenotazione
+        match /bookings/{bookingId} {
+          allow create: if true;
+        }
+
+        // Un utente loggato può leggere e aggiornare le prenotazioni
+        match /bookings/{bookingId} {
+           allow read, update: if request.auth != null;
+        }
+
+        // Un utente può creare il proprio documento utente
+        match /users/{userId} {
+          allow create: if request.auth.uid == userId;
+        }
+
+        // Un utente può leggere e aggiornare solo i propri dati
+        match /users/{userId} {
+          allow read, update: if request.auth.uid == userId;
+        }
+      }
+    }
+    ```
+    * Clicca su **"Pubblica"**.
+
+3.  **Fai una Prova Pulita:**
+    * Vai nella sezione **Authentication** di Firebase ed elimina l'utente che avevi creato per i test.
+    * Vai alla tua pagina di login e **registrati di nuovo**.
+
+Questa volta, il codice corretto e le regole giuste lavoreranno insieme. Vedrai che dopo la registrazione, se vai in **Firestore Database**, la collezione `users` apparirà magicamen
