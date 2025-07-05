@@ -87,27 +87,30 @@
                 try {
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     const user = userCredential.user;
+                    
+                    console.log("Utente creato in Authentication, UID:", user.uid);
+                    console.log("Ora provo a scrivere in Firestore...");
 
-                    // 1. Crea un nuovo documento ristorante
                     const newRestaurantRef = await addDoc(collection(db, "restaurants"), {
                         ownerId: user.uid,
-                        name: "Il Mio Ristorante (Nuovo)", // Nome di default
+                        name: "Il Mio Ristorante (Nuovo)",
                         createdAt: new Date()
                     });
+                    console.log("Documento Ristorante creato con ID:", newRestaurantRef.id);
 
-                    // 2. Crea il documento utente collegandolo al nuovo ristorante
                     await setDoc(doc(db, "users", user.uid), {
                         email: user.email,
                         subscriptionStatus: "inactive",
-                        restaurantId: newRestaurantRef.id, // Salva l'ID del nuovo ristorante
+                        restaurantId: newRestaurantRef.id,
                         createdAt: new Date()
                     });
+                    console.log("Documento Utente creato/aggiornato con successo.");
 
                     window.location.href = './pannello/';
                 } catch (error) {
-                    errorMessage.textContent = 'Errore durante la registrazione. Controlla la console per i dettagli e verifica le regole di sicurezza di Firestore.';
+                    errorMessage.textContent = 'Errore durante la registrazione. Controlla la console per i dettagli.';
                     errorMessage.classList.remove('hidden');
-                    console.error("Errore di registrazione:", error);
+                    console.error("ERRORE DETTAGLIATO DI REGISTRAZIONE:", error);
                 }
             }
         });
