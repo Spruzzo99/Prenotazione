@@ -35,6 +35,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyBqjGiIOLmBKdgWdfIUryQIZuht3iClTpc",
             authDomain: "saas-ristoranti.firebaseapp.com",
@@ -44,11 +45,21 @@
             appId: "1:967466784588:web:d5b00440aaba806e06e1e9",
             measurementId: "G-0LZ8TRWNR0"
         };
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const form = document.getElementById('auth-form'), emailInput = document.getElementById('email'), passwordInput = document.getElementById('password'), toggleLink = document.getElementById('toggle-link'), formTitle = document.getElementById('form-title'), submitButton = document.getElementById('submit-button'), errorMessage = document.getElementById('error-message');
+
+        const form = document.getElementById('auth-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const toggleLink = document.getElementById('toggle-link');
+        const formTitle = document.getElementById('form-title');
+        const submitButton = document.getElementById('submit-button');
+        const errorMessage = document.getElementById('error-message');
+
         let isLoginMode = true;
+
         toggleLink.addEventListener('click', (e) => {
             e.preventDefault();
             isLoginMode = !isLoginMode;
@@ -57,10 +68,13 @@
             submitButton.textContent = isLoginMode ? 'Accedi' : 'Registrati';
             toggleLink.textContent = isLoginMode ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi';
         });
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = emailInput.value, password = passwordInput.value;
+            const email = emailInput.value;
+            const password = passwordInput.value;
             errorMessage.classList.add('hidden');
+
             if (isLoginMode) {
                 try {
                     await signInWithEmailAndPassword(auth, email, password);
@@ -73,17 +87,22 @@
                 try {
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     const user = userCredential.user;
+
+                    // 1. Crea un nuovo documento ristorante
                     const newRestaurantRef = await addDoc(collection(db, "restaurants"), {
                         ownerId: user.uid,
-                        name: "Il Mio Ristorante (Nuovo)",
+                        name: "Il Mio Ristorante (Nuovo)", // Nome di default
                         createdAt: new Date()
                     });
+
+                    // 2. Crea il documento utente collegandolo al nuovo ristorante
                     await setDoc(doc(db, "users", user.uid), {
                         email: user.email,
                         subscriptionStatus: "inactive",
-                        restaurantId: newRestaurantRef.id,
+                        restaurantId: newRestaurantRef.id, // Salva l'ID del nuovo ristorante
                         createdAt: new Date()
                     });
+
                     window.location.href = './pannello/';
                 } catch (error) {
                     errorMessage.textContent = 'Errore durante la registrazione. Controlla la console.';
