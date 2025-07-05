@@ -105,7 +105,7 @@
 
                     window.location.href = './pannello/';
                 } catch (error) {
-                    errorMessage.textContent = 'Errore durante la registrazione. Controlla la console.';
+                    errorMessage.textContent = 'Errore durante la registrazione. Controlla la console per i dettagli e verifica le regole di sicurezza di Firestore.';
                     errorMessage.classList.remove('hidden');
                     console.error("Errore di registrazione:", error);
                 }
